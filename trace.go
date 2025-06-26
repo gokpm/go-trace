@@ -26,6 +26,7 @@ func Init(ctx context.Context, config *Config) error {
 	if err != nil {
 		return err
 	}
+	processor := trace.NewBatchSpanProcessor(exporter)
 	hostname, err := os.Hostname()
 	if err != nil {
 		return err
@@ -43,9 +44,10 @@ func Init(ctx context.Context, config *Config) error {
 	}
 	sampler := trace.ParentBased(trace.TraceIDRatioBased(config.Sampling))
 	providerOpts := []trace.TracerProviderOption{
-		trace.WithResource(mergedResource),
 		trace.WithBatcher(exporter),
+		trace.WithResource(mergedResource),
 		trace.WithSampler(sampler),
+		trace.WithSpanProcessor(processor),
 	}
 	_ = trace.NewTracerProvider(providerOpts...).Tracer(config.Name)
 	return nil
