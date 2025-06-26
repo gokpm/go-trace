@@ -1,4 +1,4 @@
-module github.com/gokpm/go-tracer
+module github.com/gokpm/go-trace
 
 go 1.24.4
 
