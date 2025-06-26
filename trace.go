@@ -3,9 +3,7 @@ package trace
 import (
 	"context"
 	"os"
-	"time"
 
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -16,14 +14,12 @@ type Config struct {
 	Name        string
 	Environment string
 	URL         string
-	Timeout     time.Duration
 	Sampling    float64
 }
 
 func Init(ctx context.Context, config *Config) error {
 	httpOpts := []otlptracehttp.Option{
 		otlptracehttp.WithEndpointURL(config.URL),
-		otlptracehttp.WithTimeout(config.Timeout),
 		otlptracehttp.WithCompression(otlptracehttp.GzipCompression),
 	}
 	exporter, err := otlptracehttp.New(ctx, httpOpts...)
@@ -51,6 +47,6 @@ func Init(ctx context.Context, config *Config) error {
 		trace.WithBatcher(exporter),
 		trace.WithSampler(sampler),
 	}
-	otel.SetTracerProvider(trace.NewTracerProvider(providerOpts...))
+	_ = trace.NewTracerProvider(providerOpts...).Tracer(config.Name)
 	return nil
 }
