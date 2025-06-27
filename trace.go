@@ -3,6 +3,7 @@ package trace
 import (
 	"context"
 	"os"
+	"time"
 
 	otrace "go.opentelemetry.io/otel/trace"
 
@@ -11,6 +12,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 )
+
+var ok bool
+var provider *trace.TracerProvider
 
 type Config struct {
 	Ok          bool
@@ -21,7 +25,8 @@ type Config struct {
 }
 
 func Setup(ctx context.Context, config *Config) (otrace.Tracer, error) {
-	if !config.Ok {
+	ok = config.Ok
+	if !ok {
 		return nil, nil
 	}
 	httpOpts := []otlptracehttp.Option{
@@ -55,5 +60,19 @@ func Setup(ctx context.Context, config *Config) (otrace.Tracer, error) {
 		trace.WithSampler(sampler),
 		trace.WithSpanProcessor(processor),
 	}
-	return trace.NewTracerProvider(providerOpts...).Tracer(config.Name), nil
+	provider = trace.NewTracerProvider(providerOpts...)
+	return provider.Tracer(config.Name), nil
+}
+
+func Shutdown(timeout time.Duration) error {
+	if !ok {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
+	defer cancel()
+	err := provider.Shutdown(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
