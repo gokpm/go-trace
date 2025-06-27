@@ -70,7 +70,11 @@ func Shutdown(timeout time.Duration) error {
 	}
 	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
 	defer cancel()
-	err := provider.Shutdown(ctx)
+	err := provider.ForceFlush(ctx)
+	if err != nil {
+		return err
+	}
+	err = provider.Shutdown(ctx)
 	if err != nil {
 		return err
 	}
