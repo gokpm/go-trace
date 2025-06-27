@@ -17,7 +17,7 @@ type Config struct {
 	Sampling    float64
 }
 
-func Init(ctx context.Context, config *Config) error {
+func Setup(ctx context.Context, config *Config) error {
 	httpOpts := []otlptracehttp.Option{
 		otlptracehttp.WithEndpointURL(config.URL),
 		otlptracehttp.WithCompression(otlptracehttp.GzipCompression),
