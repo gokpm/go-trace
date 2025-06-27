@@ -13,6 +13,7 @@ import (
 )
 
 type Config struct {
+	Ok          bool
 	Name        string
 	Environment string
 	URL         string
@@ -20,6 +21,9 @@ type Config struct {
 }
 
 func Setup(ctx context.Context, config *Config) (otrace.Tracer, error) {
+	if !config.Ok {
+		return nil, nil
+	}
 	httpOpts := []otlptracehttp.Option{
 		otlptracehttp.WithEndpointURL(config.URL),
 		otlptracehttp.WithCompression(otlptracehttp.GzipCompression),
