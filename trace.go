@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 
+	otrace "go.opentelemetry.io/otel/trace"
+
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -17,19 +19,19 @@ type Config struct {
 	Sampling    float64
 }
 
-func Setup(ctx context.Context, config *Config) error {
+func Setup(ctx context.Context, config *Config) (otrace.Tracer, error) {
 	httpOpts := []otlptracehttp.Option{
 		otlptracehttp.WithEndpointURL(config.URL),
 		otlptracehttp.WithCompression(otlptracehttp.GzipCompression),
 	}
 	exporter, err := otlptracehttp.New(ctx, httpOpts...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	processor := trace.NewBatchSpanProcessor(exporter)
 	hostname, err := os.Hostname()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	base := resource.Default()
 	newResource := resource.NewWithAttributes(
@@ -40,7 +42,7 @@ func Setup(ctx context.Context, config *Config) error {
 	)
 	mergedResource, err := resource.Merge(base, newResource)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	sampler := trace.ParentBased(trace.TraceIDRatioBased(config.Sampling))
 	providerOpts := []trace.TracerProviderOption{
@@ -49,6 +51,5 @@ func Setup(ctx context.Context, config *Config) error {
 		trace.WithSampler(sampler),
 		trace.WithSpanProcessor(processor),
 	}
-	_ = trace.NewTracerProvider(providerOpts...).Tracer(config.Name)
-	return nil
+	return trace.NewTracerProvider(providerOpts...).Tracer(config.Name), nil
 }
