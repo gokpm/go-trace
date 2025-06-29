@@ -22,9 +22,10 @@ type Config struct {
 	Environment string
 	URL         string
 	Sampling    float64
+	DialTimeout time.Duration
 }
 
-func Setup(ctx context.Context, config *Config) (otrace.Tracer, error) {
+func Setup(config *Config) (otrace.Tracer, error) {
 	ok = config.Ok
 	if !ok {
 		return nil, nil
@@ -33,6 +34,8 @@ func Setup(ctx context.Context, config *Config) (otrace.Tracer, error) {
 		otlptracehttp.WithEndpointURL(config.URL),
 		otlptracehttp.WithCompression(otlptracehttp.GzipCompression),
 	}
+	ctx, cancel := context.WithTimeout(context.TODO(), config.DialTimeout)
+	defer cancel()
 	exporter, err := otlptracehttp.New(ctx, httpOpts...)
 	if err != nil {
 		return nil, err
